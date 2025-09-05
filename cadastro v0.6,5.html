@@ -1,0 +1,2371 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cadastro e Relatórios</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Incluindo Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <style>
+        /* Reset básico */
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            min-height: 100vh;
+            background: #f5f7fa;
+            color: #1e293b;
+        }
+        /* Sidebar */
+
+        nav {
+            width: 250px;
+            background-color: #2563eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            color: white;
+        }
+
+        nav header {
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        nav header svg {
+            width: 26px;
+            height: 26px;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        nav a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 18px;
+            border-radius: 6px;
+            color: white;
+            text-decoration: none;
+            margin-bottom: 12px;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        nav a.active,
+        nav a:hover {
+            background-color: #3b82f6;
+            font-weight: 600;
+        }
+
+        nav a svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            stroke-width: 2;
+        }
+
+        nav footer {
+            margin-top: auto;
+            font-size: 12px;
+            opacity: 0.6;
+            line-height: 1.3;
+            text-align: center;
+            user-select: none;
+        }
+        /* Main container */
+
+        main {
+            flex-grow: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+        /* Data display */
+
+        .date-display {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin-bottom: 18px;
+        }
+        /* Form styles (from index.html) */
+
+        form {
+            background-color: white;
+            padding: 24px 28px;
+            border-radius: 12px;
+            box-shadow: 0px 2px 10px rgb(0 0 0 / 0.05);
+            max-width: 900px;
+            margin: 0 auto 40px auto;
+            font-size: 0.9rem;
+        }
+
+        form legend {
+            display: block;
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin-bottom: 3px;
+            color: #1e293b;
+        }
+
+        form small.description {
+            color: #94a3b8;
+            font-weight: 400;
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+        /* Section container */
+
+        .section {
+            margin-bottom: 26px;
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 14px 20px 20px 20px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .section-header {
+            margin-bottom: 12px;
+        }
+        /* Inputs grid */
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+        /* Input group */
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-weight: 500;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+
+        label .required {
+            margin-left: 4px;
+            color: #ef4444;
+            /* vermelho */
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="date"],
+        input[type="password"], /* Adicionado para campos de senha */
+        select {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 1rem;
+            background-color: #f8fafc;
+            color: #334155;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="date"]:focus,
+        input[type="password"]:focus, /* Adicionado para campos de senha */
+        select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background-color: white;
+            box-shadow: 0 0 3px #3b82f6cc;
+        }
+
+        input::placeholder,
+        select option:first-child {
+            color: #94a3b8;
+        }
+        /* Botao */
+
+        button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 26px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgb(37 99 235 / 0.5);
+            transition: background-color 0.3s;
+            margin-top: 12px;
+            display: block;
+            margin-left: auto;
+        }
+
+        button:hover {
+            background-color: #1e40af;
+        }
+        /* Responsividade */
+
+        @media (max-width: 900px) {
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+            nav {
+                width: 60px;
+                padding: 20px 10px;
+            }
+            nav a span {
+                display: none;
+            }
+            nav header span {
+                display: none;
+            }
+            nav footer {
+                font-size: 10px;
+            }
+        }
+        /* Custom scrollbar for sidebar (from relatorio.html) */
+
+         ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+         ::-webkit-scrollbar-thumb {
+            background: #3b82f6;
+            border-radius: 10px;
+        }
+        /* Sidebar links active state (from relatorio.html) */
+
+        .sidebar-link-active {
+            background-color: #3b82f6;
+            color: white;
+            border-radius: 6px;
+            pointer-events: none;
+            box-shadow: 0 0 8px 2px rgb(59 130 246 / 0.5);
+        }
+        /* Box shadow for cards (from relatorio.html) */
+
+        .card-shadow {
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+        }
+        /* Prevent link text selection on btn icons (from relatorio.html) */
+
+        .btn-icon {
+            user-select: none;
+        }
+        /* Specific styles for relatorio content */
+
+        .relatorio-content {
+            padding: 24px 32px;
+            /* Match main padding */
+        }
+
+        .relatorio-content .date-display {
+            text-align: right;
+            /* Align date to right as in relatorio.html */
+        }
+
+        .relatorio-content header h1 {
+            display: flex;
+            align-items: center;
+            font-size: 1.875rem;
+            /* text-3xl */
+            font-weight: 600;
+            /* font-semibold */
+            color: #1e293b;
+            /* text-gray-800 */
+        }
+
+        .relatorio-content header h1 svg {
+            width: 2rem;
+            /* w-8 */
+            height: 2rem;
+            /* h-8 */
+            margin-right: 0.5rem;
+            /* mr-2 */
+            color: #2563eb;
+            /* text-blue-600 */
+        }
+
+        .relatorio-content header p {
+            color: #94a3b8;
+            /* text-gray-400 */
+            margin-top: 0.25rem;
+            /* mt-1 */
+        }
+
+        .relatorio-content .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            /* gap-4 */
+            margin-bottom: 2.5rem;
+            /* mb-10 */
+        }
+
+        .relatorio-content .summary-stats>div {
+            background-color: white;
+            border-radius: 0.5rem;
+            /* rounded-lg */
+            padding: 1.5rem;
+            /* px-6 py-4 */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .relatorio-content .summary-stats p {
+            font-size: 0.875rem;
+            /* text-sm */
+            color: #94a3b8;
+            /* text-gray-400 */
+        }
+
+        .relatorio-content .summary-stats p.font-bold {
+            font-weight: 700;
+            /* font-bold */
+            font-size: 1.25rem;
+            /* text-xl */
+            color: #1e293b;
+            /* text-gray-800 */
+        }
+
+        .relatorio-content .summary-stats svg {
+            width: 2.25rem;
+            /* w-9 */
+            height: 2.25rem;
+            /* h-9 */
+        }
+
+        .relatorio-content .report-types-header {
+            background-color: #e2e8f0;
+            /* bg-gray-200 */
+            padding: 1rem 1.5rem;
+            /* px-6 py-4 */
+            border-top-left-radius: 0.25rem;
+            /* rounded-t */
+            border-top-right-radius: 0.25rem;
+            /* rounded-t */
+            margin-bottom: 1.5rem;
+            /* mb-6 */
+        }
+
+        .relatorio-content .report-types-header h2 {
+            font-size: 1.25rem;
+            /* text-xl */
+            font-weight: 600;
+            /* font-semibold */
+            color: #1e293b;
+            /* text-gray-800 */
+        }
+
+        .relatorio-content .report-types-header p {
+            color: #94a3b8;
+            /* text-gray-400 */
+            font-size: 0.875rem;
+            /* text-sm */
+        }
+
+        .relatorio-content .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2.5rem;
+            /* gap-10 */
+            margin-bottom: 2.5rem;
+            /* mb-10 */
+        }
+
+        .relatorio-content .reports-grid article {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: white;
+            border-radius: 0.5rem;
+            /* rounded-lg */
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            /* shadow-inner */
+            padding: 1.5rem 1.25rem;
+            /* py-6 px-5 */
+            text-align: center;
+        }
+
+        .relatorio-content .reports-grid article .icon-wrapper {
+            border-radius: 0.375rem;
+            /* rounded-md */
+            width: 3rem;
+            /* w-12 */
+            height: 3rem;
+            /* h-12 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            /* mb-3 */
+        }
+
+        .relatorio-content .reports-grid article .icon-wrapper svg {
+            width: 1.5rem;
+            /* w-6 */
+            height: 1.5rem;
+            /* h-6 */
+        }
+
+        .relatorio-content .reports-grid article h3 {
+            font-size: 1rem;
+            /* text-base */
+            font-weight: 500;
+            /* font-medium */
+            color: #1e293b;
+            /* text-gray-900 */
+        }
+
+        .relatorio-content .reports-grid article p {
+            margin-top: 0.25rem;
+            /* mt-1 */
+            font-size: 0.75rem;
+            /* text-xs */
+            color: #94a3b8;
+            /* text-gray-400 */
+        }
+
+        .relatorio-content .reports-grid article button {
+            margin-top: 1.5rem;
+            /* mt-6 */
+            width: 100%;
+            background-color: #3b82f6;
+            /* bg-blue-500 */
+            color: white;
+            font-weight: 600;
+            /* font-semibold */
+            padding: 0.5rem 0;
+            /* py-2 */
+            border-radius: 0.375rem;
+            /* rounded-md */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            /* gap-2 */
+            user-select: none;
+            transition: background-color 0.3s;
+        }
+
+        .relatorio-content .reports-grid article button:hover {
+            background-color: #2563eb;
+            /* hover:bg-blue-600 */
+        }
+
+        .relatorio-content .reports-grid article button svg {
+            width: 1.25rem;
+            /* w-5 */
+            height: 1.25rem;
+            /* h-5 */
+        }
+
+        .relatorio-content .reports-grid article.border {
+            border: 1px solid #bfdbfe;
+            /* border-blue-200 */
+        }
+        /* Dashboard specific styles */
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .dashboard-card {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .dashboard-card .title {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-card .value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .dashboard-card .description {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+        }
+
+        .dashboard-chart-container {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 6px rgb(0 0 0 / 0.15);
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-chart-container h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        /* Styles from dashboard inicial.html */
+        .charts-container {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            /* Allow wrapping for smaller screens */
+            gap: 20px;
+            /* Add gap between chart boxes */
+        }
+
+        .chart-box {
+            width: 32%;
+            /* Adjust width for responsiveness */
+            min-width: 300px;
+            /* Minimum width to prevent squishing */
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+            margin-bottom: 20px;
+            /* Space between rows */
+        }
+
+        .chart-box h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        canvas {
+            background: #fff;
+            /* Already defined in .chart-box */
+            border-radius: 6px;
+            /* Already defined in .chart-box */
+            padding: 10px;
+            /* Already defined in .chart-box */
+            box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+            /* Already defined in .chart-box */
+        }
+
+        .horizontal-bar-container {
+            width: 100%;
+            /* Full width for horizontal bar chart */
+            margin-top: 20px;
+            /* Adjusted margin */
+            background: #fff;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgb(0 0 0 / 0.1);
+        }
+
+        .horizontal-bar-container h4 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1e293b;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .chart-box {
+                width: 100%;
+                /* Full width on smaller screens */
+            }
+        }
+
+        /* Estilos para a tabela de lista de pessoal */
+        .personal-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0px 2px 10px rgb(0 0 0 / 0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            /* Para bordas arredondadas funcionarem com overflow */
+        }
+
+        .personal-list-table th,
+        .personal-list-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .personal-list-table th {
+            background-color: #f1f5f9;
+            color: #334155;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .personal-list-table tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .personal-list-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .personal-list-table .clickable-name {
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .personal-list-table .clickable-name:hover {
+            text-decoration: underline;
+        }
+
+        /* Estilos para os botões de ação na tabela */
+        .action-buttons button {
+            padding: 6px 10px;
+            font-size: 0.8rem;
+            margin-left: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            /* Para alinhar ícones e texto */
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-buttons .edit-button {
+            background-color: #28a745;
+            /* Verde */
+            color: white;
+        }
+
+        .action-buttons .edit-button:hover {
+            background-color: #218838;
+        }
+
+        .action-buttons .delete-button {
+            background-color: #dc3545;
+            /* Vermelho */
+            color: white;
+        }
+
+        .action-buttons .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        /* Estilos para a tela de login */
+        .login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            width: 100%;
+            background: #f5f7fa;
+            color: #1e293b;
+        }
+
+        .login-box {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .login-box h2 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 25px;
+            color: #2563eb;
+        }
+
+        .login-box .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .login-box label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .login-box input[type="email"],
+        .login-box input[type="password"] {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        .login-box button {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            border-radius: 8px;
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .login-box button:hover {
+            background-color: #1e40af;
+        }
+
+        /* Removido o .toggle-form pois não haverá registro */
+        /* .login-box .toggle-form {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .login-box .toggle-form a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-box .toggle-form a:hover {
+            text-decoration: underline;
+        } */
+
+        .login-box .error-message {
+            color: #dc3545;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Tela de Login (inicialmente visível se não houver usuário logado) -->
+    <div id="auth-container" class="login-container">
+        <div class="login-box">
+            <h2 id="auth-title">Login</h2>
+            <div class="input-group">
+                <label for="auth-email">E-mail</label>
+                <input type="email" id="auth-email" placeholder="seu@email.com" />
+            </div>
+            <div class="input-group">
+                <label for="auth-password">Senha</label>
+                <input type="password" id="auth-password" placeholder="********" />
+            </div>
+            <button id="auth-button">Entrar</button>
+            <p class="error-message" id="auth-error-message"></p>
+            <!-- Removido o link de registro -->
+            <!-- <p class="toggle-form">
+                Não tem uma conta? <a href="#" id="toggle-auth-mode">Registre-se</a>
+            </p> -->
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal da Aplicação (oculto até o login) -->
+    <div id="app-container" style="display: none;">
+        <nav>
+            <header>
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                    <polyline points="3 11 12 2 21 11" />
+                </svg>
+                <span>Cadastro</span>
+            </header>
+            <a href="#" class="nav-link" data-target="dashboard-content" title="Dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12H21" />
+                    <path d="M3 6H21" />
+                    <path d="M3 18H21" />
+                </svg>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="nav-link active" data-target="cadastro-content" title="Cadastrar pessoal">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 9v6a3 3 0 01-3 3H9a3 3 0 01-3-3V9" />
+                    <path d="M12 3v12M9 6h6" />
+                </svg>
+                <span>Cadastrar pessoal</span>
+            </a>
+            <a href="#" class="nav-link" data-target="lista-content" title="Lista de pessoal">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="7" r="4" />
+                    <path d="M5.5 21h13" />
+                </svg>
+                <span>Lista de pessoal</span>
+            </a>
+            <a href="#" class="nav-link" data-target="relatorios-content" title="Relatórios">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="20" x2="12" y2="10" />
+                    <circle cx="12" cy="5" r="3" />
+                </svg>
+                <span>Relatórios</span>
+            </a>
+            <a href="#" class="nav-link" id="logout-button" title="Sair">
+                <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+                <span>Sair</span>
+            </a>
+            <footer>
+                Sistema Pessoal v1.0<br /> Tribunal Superior Pessoal
+            </footer>
+        </nav>
+
+        <main>
+            <!-- Conteúdo do Cadastro Pessoal (inicialmente visível) -->
+            <div id="cadastro-content" class="content-section">
+                <div class="date-display" aria-label="Data atual">quinta-feira, 28 de agosto de 2025</div>
+
+                <form id="cadastroEleitorForm" novalidate>
+                    <!-- Informações Pessoais -->
+                    <div class="section">
+                        <div class="grid-2">
+                            <label for="nomeCompleto">Nome Completo <span class="required">*</span>
+                                <input type="text" id="nomeCompleto" name="nomeCompleto" placeholder="Digite o nome completo" required />
+                            </label>
+
+                            <label for="cpf">CPF
+                                <input type="text" id="cpf" name="cpf" placeholder="000.000.000-00" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" required />
+                            </label>
+                        </div>
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="dataNascimento">Data de Nascimento <span class="required">*</span>
+                                <input type="date" id="dataNascimento" name="dataNascimento" required />
+                            </label>
+
+                            <label for="sexo">Sexo
+                                <select id="sexo" name="sexo">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="feminino">Feminino</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="estadoCivil">Estado Civil
+                                <select id="estadoCivil" name="estadoCivil">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="solteiro">Solteiro(a)</option>
+                                    <option value="casado">Casado(a)</option>
+                                    <option value="divorciado">Divorciado(a)</option>
+                                    <option value="viuvo">Viúvo(a)</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+
+                            <label for="escolaridade">Escolaridade
+                                <select id="escolaridade" name="escolaridade">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="fundamental">Ensino Fundamental</option>
+                                    <option value="medio">Ensino Médio</option>
+                                    <option value="superior">Ensino Superior</option>
+                                    <option value="pos">Pós-Graduação</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Contato -->
+                    <fieldset class="section" aria-labelledby="contatoLegend">
+                        <legend id="contatoLegend">Contato</legend>
+                        <small class="description">Informações para contato</small>
+
+                        <div class="grid-2">
+                            <label for="telefone">Telefone
+                                <input type="text" id="telefone" name="telefone" placeholder="(00) 00000-0000" pattern="\(\d{2}\) \d{4,5}-\d{4}" />
+                            </label>
+
+                            <label for="email">E-mail
+                                <input type="email" id="email" name="email" placeholder="exemplo@email.com" />
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <!-- Endereço -->
+                    <fieldset class="section" aria-labelledby="enderecoLegend">
+                        <legend id="enderecoLegend">Endereço</legend>
+                        <small class="description">Endereço residencial do eleitor</small>
+
+                        <div class="grid-2">
+                            <label for="cep">CEP
+                                <input type="text" id="cep" name="cep" placeholder="00000-000" pattern="\d{5}-\d{3}" />
+                            </label>
+
+                            <label for="endereco">Endereço
+                                <input type="text" id="endereco" name="endereco" placeholder="Rua, Avenida, etc." />
+                            </label>
+                        </div>
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="escolaVotacao">Escola de Votação
+                                <select id="escolaVotacao" name="escolaVotacao">
+                                    <option value="" disabled selected>Selecione a Escola</option>
+                                    <option value="escolaA">Escola Municipal A</option>
+                                    <option value="escolaB">Escola Estadual B</option>
+                                    <option value="escolaC">Colégio C</option>
+                                    <option value="outra">Outra</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="grid-3" style="margin-top: 12px;">
+                            <label for="numero">Número
+                                <input type="text" id="numero" name="numero" placeholder="123" />
+                            </label>
+
+                            <label for="complemento">Complemento
+                                <input type="text" id="complemento" name="complemento" placeholder="Apto, Bloco, etc." />
+                            </label>
+
+                            <label for="bairro">Bairro
+                                <input type="text" id="bairro" name="bairro" placeholder="Nome do bairro" />
+                            </label>
+                        </div>
+
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="uf">UF
+                                <select id="uf" name="uf">
+                                    <option value="" disabled selected>UF</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit">Cadastrar</button>
+                </form>
+            </div>
+
+            <!-- Conteúdo do Dashboard (novo) -->
+            <div id="dashboard-content" class="content-section" style="display: none;">
+                <div class="date-display" aria-label="Data atual">quinta-feira, 28 de agosto de 2025</div>
+
+                <h2>Dashboard</h2>
+                <div class="charts-container">
+                    <!-- Gráfico de barras Headcount por Mês -->
+                    <div class="chart-box">
+                        <h4>Headcount por Mês</h4>
+                        <canvas id="headcountChart"></canvas>
+                    </div>
+
+                    <!-- Gráfico de linha Taxa de Cadastros no Ano -->
+                    <div class="chart-box">
+                        <h4>Taxa de Cadastros no Ano</h4>
+                        <canvas id="promotionRateChart"></canvas>
+                    </div>
+
+                    <!-- Gráfico de rosca Tempo de Cadastro no Sistema -->
+                    <div class="chart-box">
+                        <h4>Tempo de Cadastro no Sistema</h4>
+                        <canvas id="tempoCasaChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Gráfico de barras horizontal duplo Idade por Gênero -->
+                <div class="horizontal-bar-container">
+                    <h4>Distribuição de Idade por Gênero</h4>
+                    <canvas id="ageGenderChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Conteúdo dos Relatórios (inicialmente oculto) -->
+            <div id="relatorios-content" class="content-section" style="display: none;">
+                <div class="date-display select-text">
+                    quinta-feira, 28 de agosto de 2025
+                </div>
+
+                <header class="mb-6">
+                    <h1 class="flex items-center text-3xl font-semibold text-gray-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 mr-2 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12H15M9 16H15M10 9H14M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H7l-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg> Relatórios
+                    </h1>
+                    <p class="text-gray-400 mt-1 select-text">Gere relatórios detalhados sobre o cadastro eleitoral</p>
+                </header>
+
+                <section class="summary-stats select-text">
+                    <div class="card-shadow bg-white rounded-lg px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-gray-400 text-sm">Total Eleitores</p>
+                            <p class="font-bold text-xl text-gray-800" id="totalEleitores">0</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20v-6a4 4 0 0 1 8 0v6M7 8a4 4 0 1 1 8 0" />
+                        </svg>
+                    </div>
+                    <div class="card-shadow bg-white rounded-lg px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-green-600 text-sm font-semibold">Eleitores Ativos</p>
+                            <p class="font-bold text-xl text-green-700" id="eleitoresAtivos">0</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-4-4h-1M9 20v-6a4 4 0 0 1 8 0v6M7 8a4 4 0 1 1 8 0" />
+                        </svg>
+                    </div>
+                    <div class="card-shadow bg-white rounded-lg px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-blue-500 text-sm font-semibold">Cadastros Hoje</p>
+                            <p class="font-bold text-xl text-blue-600" id="cadastrosHoje">0</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <rect x="3" y="4" width="18" height="14" rx="2" ry="2" />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                        </svg>
+                    </div>
+                    <div class="card-shadow bg-white rounded-lg px-6 py-4 flex items-center justify-between">
+                        <div>
+                            <p class="text-orange-500 text-sm font-semibold">Cadastros do Mês</p>
+                            <p class="font-bold text-xl text-orange-500" id="cadastrosMes">0</p>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <polyline points="16 6 21 6 21 11" />
+                            <polyline points="21 17 21 21 17 21" />
+                            <polyline points="8 18 3 3 7 3" />
+                            <line x1="21" y1="6" x2="14" y2="13" />
+                            <line x1="10" y1="17" x2="3" y2="10" />
+                        </svg>
+                    </div>
+                </section>
+
+                <section class="report-types-header select-text mb-6">
+                    <h2 class="text-xl font-semibold text-gray-800">Tipos de Relatório</h2>
+                    <p class="text-gray-400 text-sm">Selecione o tipo de relatório que deseja gerar</p>
+                </section>
+
+                <section class="reports-grid">
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                        <div class="rounded-md bg-blue-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v18h18" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 3v18H6" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6M9 16h6M10 9h4" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório Geral</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Visão geral de todos os eleitores cadastrados</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="geral">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                        <div class="rounded-md bg-green-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a10 10 0 1 1-10 10" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l3 3 5-5" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório por Zona Eleitoral</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Eleitores agrupados por zona eleitoral</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="zona">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                        <div class="rounded-md bg-purple-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <circle cx="12" cy="12" r="10" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l3 3" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório por Faixa Etária</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Distribuição dos eleitores por idade</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="idade">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                        <div class="rounded-md bg-orange-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <rect x="3" y="4" width="18" height="14" rx="2" ry="2" />
+                                <line x1="16" y1="2" x2="16" y2="6" />
+                                <line x1="8" y1="2" x2="8" y2="6" />
+                                <line x1="3" y1="10" x2="21" y2="10" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório Mensal</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Cadastros realizados no último mês</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="mensal">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center border border-blue-200">
+                        <div class="rounded-md bg-red-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14 3v10h-4V3m11 17a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório de Crescimento</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Evolução dos cadastros ao longo do tempo</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="crescimento">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center border border-blue-200">
+                        <div class="rounded-md bg-indigo-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 10l4 4m0 0l-4 4m4-4H7m6-4v8" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-medium text-gray-900 select-text">Relatório por Status</h3>
+                        <p class="mt-1 text-xs text-gray-400 select-text">Eleitores ativos e inativos</p>
+                        <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="status">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                            </svg>
+                            Gerar Relatório
+                        </button>
+                    </article>
+
+                    <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                        <div class="rounded-md bg-teal-100 w-12 h-12 flex items-center justify-center mb-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16 6a4 4 0 0 1 4 4v6a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-6a4 4 0 0 1 4-4h8zM9 10h0M15 10h0M12 14a4 4 0 0 0 0 8H12a4 4 0 0 0 0-8z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-900 select-text">Relatório por Escola</h3>
+                    <p class="mt-1 text-xs text-gray-400 select-text">Eleitores agrupados por escola de votação</p>
+                    <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="escola">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                        </svg>
+                        Gerar Relatório
+                    </button>
+                </article>
+
+                <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                    <div class="rounded-md bg-pink-100 w-12 h-12 flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-pink-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4a3 3 0 0 1 3 3v1a3 3 0 1 1-6 0V7a3 3 0 0 1 3-3zM15 14a5 5 0 0 1-6 0v3h6z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-900 select-text">Relatório por Sexo</h3>
+                    <p class="mt-1 text-xs text-gray-400 select-text">Distribuição dos eleitores por gênero</p>
+                    <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="sexo">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                        </svg>
+                        Gerar Relatório
+                    </button>
+                </article>
+
+                <article class="flex flex-col items-center bg-white rounded-lg shadow-inner card-shadow py-6 px-5 text-center">
+                    <div class="rounded-md bg-orange-50 w-12 h-12 flex items-center justify-center mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true" role="img">
+                            <rect x="4" y="6" width="16" height="12" rx="1" ry="1" />
+                            <path d="M8 10h8M8 14h8M12 10v4" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h18v18H3z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-medium text-gray-900 select-text">Relatório Personalizado</h3>
+                    <p class="mt-1 text-xs text-gray-400 select-text">Combine múltiplos filtros conforme sua necessidade</p>
+                    <button class="btn-generate mt-6 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 rounded-md flex items-center justify-center gap-2 select-none" type="button" data-report-type="personalizado">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" aria-hidden="true" role="img">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 12v8m-4-4l4 4m0 0l4-4m-4 4V4" />
+                        </svg>
+                        Gerar Relatório
+                    </button>
+                </article>
+            </section>
+        </div>
+
+        <!-- Conteúdo para Lista de Pessoal (adicionar aqui se necessário) -->
+        <div id="lista-content" class="content-section" style="display: none;">
+            <div class="date-display" aria-label="Data atual">quinta-feira, 28 de agosto de 2025</div>
+            <h1>Lista de Pessoal Cadastrado</h1>
+            <table class="personal-list-table">
+                <thead>
+                    <tr>
+                        <th>Nome Completo</th>
+                        <th>CPF</th>
+                        <th>Data de Nascimento</th>
+                        <th>Telefone</th>
+                        <th>E-mail</th>
+                        <th>Ações</th>
+                        <!-- NOVA COLUNA -->
+                    </tr>
+                </thead>
+                <tbody id="personalListTableBody">
+                    <!-- Dados serão inseridos aqui pelo JavaScript -->
+                </tbody>
+            </table>
+
+            <!-- Formulário de Edição (inicialmente oculto) -->
+            <div id="edit-personal-form-container" class="content-section" style="display: none; margin-top: 40px;">
+                <h2>Editar Informações do Eleitor</h2>
+                <form id="editEleitorForm" novalidate>
+                    <!-- Informações Pessoais -->
+                    <div class="section">
+                        <div class="grid-2">
+                            <label for="editNomeCompleto">Nome Completo <span class="required">*</span>
+                                <input type="text" id="editNomeCompleto" name="nomeCompleto" placeholder="Digite o nome completo" required />
+                            </label>
+
+                            <label for="editCpf">CPF
+                                <input type="text" id="editCpf" name="cpf" placeholder="000.000.000-00" pattern="\d{3}\.\d{3}\.\d{3}-\d{2}" required />
+                            </label>
+                        </div>
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="editDataNascimento">Data de Nascimento <span class="required">*</span>
+                                <input type="date" id="editDataNascimento" name="dataNascimento" required />
+                            </label>
+
+                            <label for="editSexo">Sexo
+                                <select id="editSexo" name="sexo">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="feminino">Feminino</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="editEstadoCivil">Estado Civil
+                                <select id="editEstadoCivil" name="estadoCivil">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="solteiro">Solteiro(a)</option>
+                                    <option value="casado">Casado(a)</option>
+                                    <option value="divorciado">Divorciado(a)</option>
+                                    <option value="viuvo">Viúvo(a)</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+
+                            <label for="editEscolaridade">Escolaridade
+                                <select id="editEscolaridade" name="escolaridade">
+                                    <option value="" selected disabled>Selecione</option>
+                                    <option value="fundamental">Ensino Fundamental</option>
+                                    <option value="medio">Ensino Médio</option>
+                                    <option value="superior">Ensino Superior</option>
+                                    <option value="pos">Pós-Graduação</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Contato -->
+                    <fieldset class="section" aria-labelledby="contatoLegendEdit">
+                        <legend id="contatoLegendEdit">Contato</legend>
+                        <small class="description">Informações para contato</small>
+
+                        <div class="grid-2">
+                            <label for="editTelefone">Telefone
+                                <input type="text" id="editTelefone" name="telefone" placeholder="(00) 00000-0000" pattern="\(\d{2}\) \d{4,5}-\d{4}" />
+                            </label>
+
+                            <label for="editEmail">E-mail
+                                <input type="email" id="editEmail" name="email" placeholder="exemplo@email.com" />
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <!-- Endereço -->
+                    <fieldset class="section" aria-labelledby="enderecoLegendEdit">
+                        <legend id="enderecoLegendEdit">Endereço</legend>
+                        <small class="description">Endereço residencial do eleitor</small>
+
+                        <div class="grid-2">
+                            <label for="editCep">CEP
+                                <input type="text" id="editCep" name="cep" placeholder="00000-000" pattern="\d{5}-\d{3}" />
+                            </label>
+
+                            <label for="editEndereco">Endereço
+                                <input type="text" id="editEndereco" name="endereco" placeholder="Rua, Avenida, etc." />
+                            </label>
+                        </div>
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="editEscolaVotacao">Escola de Votação
+                                <select id="editEscolaVotacao" name="escolaVotacao">
+                                    <option value="" disabled selected>Selecione a Escola</option>
+                                    <option value="escolaA">Escola Municipal A</option>
+                                    <option value="escolaB">Escola Estadual B</option>
+                                    <option value="escolaC">Colégio C</option>
+                                    <option value="outra">Outra</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="grid-3" style="margin-top: 12px;">
+                            <label for="editNumero">Número
+                                <input type="text" id="editNumero" name="numero" placeholder="123" />
+                            </label>
+
+                            <label for="editComplemento">Complemento
+                                <input type="text" id="editComplemento" name="complemento" placeholder="Apto, Bloco, etc." />
+                            </label>
+
+                            <label for="editBairro">Bairro
+                                <input type="text" id="editBairro" name="bairro" placeholder="Nome do bairro" />
+                            </label>
+                        </div>
+
+                        <div class="grid-2" style="margin-top: 12px;">
+                            <label for="editUf">UF
+                                <select id="editUf" name="uf">
+                                    <option value="" disabled selected>UF</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </label>
+                        </div>
+                    </fieldset>
+
+                    <button type="submit">Salvar Alterações</button>
+                    <button type="button" id="cancelEditButton" style="background-color: #ef4444; margin-left: 10px;">Cancelar</button>
+                </form>
+            </div>
+        </div>
+
+    </main>
+    </div>
+
+    <script>
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+         apiKey: "AIzaSyDz7EMskEWJa9Qbpnkz2n9UbH5jYr-pgJg",
+         authDomain: "sistema-pessoal-marsali013.firebaseapp.com",
+         projectId: "sistema-pessoal-marsali013",
+         storageBucket: "sistema-pessoal-marsali013.firebasestorage.app",
+         messagingSenderId: "895868577723",
+         appId: "1:895868577723:web:2f112716e70a4f99d3069e"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        let currentUser = null; // Variável para armazenar o usuário logado
+
+        // --- Firebase Authentication Functions ---
+        const authContainer = document.getElementById('auth-container');
+        const appContainer = document.getElementById('app-container');
+        const authEmailInput = document.getElementById('auth-email');
+        const authPasswordInput = document.getElementById('auth-password');
+        const authButton = document.getElementById('auth-button');
+        const authTitle = document.getElementById('auth-title');
+        // const toggleAuthModeLink = document.getElementById('toggle-auth-mode'); // Removido
+        const authErrorMessage = document.getElementById('auth-error-message');
+        const logoutButton = document.getElementById('logout-button');
+
+        // let isLoginMode = true; // true for login, false for register // Removido
+
+        function showAuthError(message) {
+            authErrorMessage.textContent = message;
+            authErrorMessage.style.display = 'block';
+        }
+
+        function clearAuthError() {
+            authErrorMessage.textContent = '';
+            authErrorMessage.style.display = 'none';
+        }
+
+        // Removido o event listener para toggleAuthModeLink
+
+        authButton.addEventListener('click', () => {
+            const email = authEmailInput.value;
+            const password = authPasswordInput.value;
+            clearAuthError();
+
+            if (!email || !password) {
+                showAuthError('Por favor, preencha e-mail e senha.');
+                return;
+            }
+
+            // Apenas tenta fazer login, não há opção de registro via UI
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    console.log('Usuário logado:', userCredential.user.email);
+                    // onAuthStateChanged will handle UI update
+                })
+                .catch((error) => {
+                    console.error('Erro ao fazer login:', error.message);
+                    // Mensagens de erro mais amigáveis para o usuário
+                    let errorMessage = 'Erro ao fazer login. Verifique seu e-mail e senha.';
+                    if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+                        errorMessage = 'E-mail ou senha inválidos.';
+                    } else if (error.code === 'auth/invalid-email') {
+                        errorMessage = 'Formato de e-mail inválido.';
+                    }
+                    showAuthError(errorMessage);
+                });
+        });
+
+        logoutButton.addEventListener('click', () => {
+            auth.signOut().then(() => {
+                console.log('Usuário deslogado.');
+                // onAuthStateChanged will handle UI update
+            }).catch((error) => {
+                console.error('Erro ao deslogar:', error.message);
+                alert('Erro ao deslogar: ' + error.message);
+            });
+        });
+
+        // --- Firebase Data (Firestore) Functions ---
+        const USERS_COLLECTION = 'usersData'; // Coleção principal para dados de usuários
+
+        // Salva os dados de eleitores para o usuário logado
+        async function saveEleitoresToFirestore(eleitoresArray) {
+            if (!currentUser) {
+                console.warn('Nenhum usuário logado para salvar dados.');
+                return;
+            }
+            try {
+                await db.collection(USERS_COLLECTION).doc(currentUser.uid).set({
+                    eleitores: eleitoresArray
+                });
+                console.log('Dados de eleitores salvos no Firestore para o usuário:', currentUser.uid);
+            } catch (error) {
+                console.error('Erro ao salvar dados no Firestore:', error);
+                alert('Erro ao salvar dados: ' + error.message);
+            }
+        }
+
+        // Carrega os dados de eleitores para o usuário logado
+        async function loadEleitoresFromFirestore() {
+            if (!currentUser) {
+                console.warn('Nenhum usuário logado para carregar dados.');
+                return [];
+            }
+            try {
+                const doc = await db.collection(USERS_COLLECTION).doc(currentUser.uid).get();
+                if (doc.exists) {
+                    const data = doc.data();
+                    console.log('Dados de eleitores carregados do Firestore para o usuário:', currentUser.uid);
+                    return data.eleitores || [];
+                } else {
+                    console.log('Nenhum dado encontrado no Firestore para o usuário:', currentUser.uid);
+                    return [];
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados do Firestore:', error);
+                alert('Erro ao carregar dados: ' + error.message);
+                return [];
+            }
+        }
+
+        // --- Existing Application Logic (Modified for Firebase) ---
+
+        // Chave para armazenar os eleitores no localStorage (AGORA USADO APENAS COMO CACHE TEMPORÁRIO OU BACKUP)
+        // const LOCAL_STORAGE_KEY = 'eleitoresCadastrados'; // Não mais a fonte primária
+
+        // Função para carregar eleitores (agora do Firestore)
+        async function carregarEleitores() {
+            if (currentUser) {
+                return await loadEleitoresFromFirestore();
+            } else {
+                // Fallback para localStorage se não houver usuário logado (para desenvolvimento/testes sem login)
+                // Isso só deve acontecer se o onAuthStateChanged ainda não tiver definido o currentUser
+                // ou se houver algum erro grave. Idealmente, o appContainer estaria oculto.
+                const eleitoresJSON = localStorage.getItem('eleitoresCadastrados');
+                return eleitoresJSON ? JSON.parse(eleitoresJSON) : [];
+            }
+        }
+
+        // Função para salvar eleitores (agora no Firestore)
+        async function salvarEleitores(eleitores) {
+            if (currentUser) {
+                await saveEleitoresToFirestore(eleitores);
+            } else {
+                // Fallback para localStorage
+                localStorage.setItem('eleitoresCadastrados', JSON.stringify(eleitores));
+            }
+        }
+
+        // --- Funções de Cadastro ---
+        const form = document.getElementById('cadastroEleitorForm');
+
+        form.addEventListener('submit', async function(event) { // Adicionado 'async'
+            event.preventDefault();
+
+            if (!form.checkValidity()) {
+                alert("Por favor, preencha todos os campos obrigatórios corretamente.");
+                return;
+            }
+
+            const data = new FormData(form);
+            let eleitor = {};
+            for (let [key, value] of data.entries()) {
+                eleitor[key] = value;
+            }
+
+            // Adiciona a data de cadastro
+            eleitor.dataCadastro = new Date().toISOString().split('T')[0]; // Formato YYYY-MM-DD
+
+            let eleitores = await carregarEleitores(); // Aguarda o carregamento
+            eleitores.push(eleitor);
+            await salvarEleitores(eleitores); // Aguarda o salvamento
+
+            alert('Eleitor cadastrado com sucesso!');
+
+            form.reset();
+            updateReportStats(); // Atualiza as estatísticas após o cadastro
+            // O dashboard e a lista de pessoal serão atualizados quando o usuário navegar para eles.
+        });
+
+        // --- Máscaras de Input ---
+
+        // Função genérica para aplicar máscara de CPF
+        function applyCpfMask(inputElement) {
+            if (!inputElement) return;
+            inputElement.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length > 11) value = value.slice(0, 11);
+
+                let formatted = '';
+                if (value.length > 9) {
+                    formatted = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                } else if (value.length > 6) {
+                    formatted = value.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                } else if (value.length > 3) {
+                    formatted = value.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                } else {
+                    formatted = value;
+                }
+                e.target.value = formatted;
+            });
+        }
+
+        // Função genérica para aplicar máscara de Telefone
+        function applyPhoneMask(inputElement) {
+            if (!inputElement) return;
+            inputElement.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '').slice(0, 11);
+                let formatted = '';
+
+                if (value.length > 10) {
+                    formatted = value.replace(/^(\d{2})(\d{5})(\d{4})$/, '($1) $2-$3');
+                } else if (value.length > 5) {
+                    formatted = value.replace(/^(\d{2})(\d{4})(\d{0,4})$/, '($1) $2-$3');
+                } else if (value.length > 2) {
+                    formatted = value.replace(/^(\d{2})(\d{0,5})/, '($1) $2');
+                } else {
+                    formatted = value;
+                }
+                e.target.value = formatted;
+            });
+        }
+
+        // Função genérica para aplicar máscara de CEP
+        function applyCepMask(inputElement) {
+            if (!inputElement) return;
+            inputElement.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '').slice(0, 8);
+                let formatted = '';
+
+                if (value.length > 5) {
+                    formatted = value.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+                } else {
+                    formatted = value;
+                }
+                e.target.value = formatted;
+            });
+        }
+
+        // Aplica as máscaras aos campos de cadastro
+        applyCpfMask(document.getElementById('cpf'));
+        applyPhoneMask(document.getElementById('telefone'));
+        applyCepMask(document.getElementById('cep'));
+
+        // Aplica as máscaras aos campos de edição (serão aplicadas quando o DOM estiver pronto)
+        applyCpfMask(document.getElementById('editCpf'));
+        applyPhoneMask(document.getElementById('editTelefone'));
+        applyCepMask(document.getElementById('editCep'));
+
+
+        // --- Atualizar data atual dinamicamente ---
+        const dateDisplays = document.querySelectorAll('.date-display');
+
+        function formatarDataBr(data) {
+            const diasSemana = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+            const meses = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+            const diaSemanaNome = diasSemana[data.getDay()];
+            const dia = data.getDate();
+            const mes = meses[data.getMonth()];
+            const ano = data.getFullYear();
+
+            return `${diaSemanaNome}, ${dia} de ${mes} de ${ano}`;
+        }
+
+        dateDisplays.forEach(display => {
+            display.textContent = formatarDataBr(new Date());
+        });
+
+        // --- Lógica para alternar o conteúdo principal ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const contentSections = document.querySelectorAll('.content-section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', async function(event) { // Adicionado 'async'
+                event.preventDefault();
+
+                navLinks.forEach(nav => {
+                    nav.classList.remove('active');
+                    nav.classList.remove('sidebar-link-active');
+                });
+
+                this.classList.add('active');
+                if (this.dataset.target === 'relatorios-content') {
+                    this.classList.add('sidebar-link-active');
+                    await updateReportStats(); // Aguarda a atualização das estatísticas
+                } else if (this.dataset.target === 'dashboard-content') {
+                    this.classList.add('sidebar-link-active');
+                    await updateDashboardCharts(); // Aguarda a atualização do dashboard
+                } else if (this.dataset.target === 'lista-content') {
+                    this.classList.add('sidebar-link-active');
+                    await renderizarListaPessoal(); // Aguarda a renderização da lista de pessoal
+                    // Garante que o formulário de edição esteja oculto ao navegar para a lista
+                    document.getElementById('edit-personal-form-container').style.display = 'none';
+                }
+
+                contentSections.forEach(section => {
+                    section.style.display = 'none';
+                });
+
+                const targetId = this.dataset.target;
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+            });
+        });
+
+        // --- Funções de Relatório ---
+
+        async function updateReportStats() { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+            const totalEleitores = eleitores.length;
+
+            // Eleitores Ativos (assumindo que todos cadastrados são ativos para este exemplo)
+            const eleitoresAtivos = totalEleitores;
+
+            // Cadastros Hoje
+            const hoje = new Date().toISOString().split('T')[0];
+            const cadastrosHoje = eleitores.filter(e => e.dataCadastro === hoje).length;
+
+            // Cadastros do Mês
+            const dataAtual = new Date();
+            const mesAtual = dataAtual.getMonth();
+            const anoAtual = dataAtual.getFullYear();
+            const cadastrosMes = eleitores.filter(e => {
+                const dataCadastro = new Date(e.dataCadastro);
+                return dataCadastro.getMonth() === mesAtual && dataCadastro.getFullYear() === anoAtual;
+            }).length;
+
+            document.getElementById('totalEleitores').textContent = totalEleitores;
+            document.getElementById('eleitoresAtivos').textContent = eleitoresAtivos;
+            document.getElementById('cadastrosHoje').textContent = cadastrosHoje;
+            document.getElementById('cadastrosMes').textContent = cadastrosMes;
+        }
+
+        async function generateReport(reportType) { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+            let reportData = [];
+            let reportTitle = "";
+
+            switch (reportType) {
+                case 'geral':
+                    reportTitle = "Relatório Geral de Eleitores";
+                    reportData = eleitores;
+                    break;
+                case 'zona':
+                    reportTitle = "Relatório por Zona Eleitoral (Não Implementado)";
+                    reportData = "Esta funcionalidade exigiria dados de zona eleitoral no cadastro.";
+                    break;
+                case 'idade':
+                    reportTitle = "Relatório por Faixa Etária";
+                    const faixasEtarias = {
+                        "0-17": 0,
+                        "18-24": 0,
+                        "25-34": 0,
+                        "35-44": 0,
+                        "45-59": 0,
+                        "60+": 0
+                    };
+                    eleitores.forEach(e => {
+                        const dataNascimento = new Date(e.dataNascimento);
+                        const idade = new Date().getFullYear() - dataNascimento.getFullYear();
+                        if (isNaN(idade)) return; // Ignora se a data de nascimento for inválida
+
+                        if (idade >= 0 && idade <= 17) faixasEtarias["0-17"]++;
+                        else if (idade >= 18 && idade <= 24) faixasEtarias["18-24"]++;
+                        else if (idade >= 25 && idade <= 34) faixasEtarias["25-34"]++;
+                        else if (idade >= 35 && idade <= 44) faixasEtarias["35-44"]++;
+                        else if (idade >= 45 && idade <= 59) faixasEtarias["45-59"]++;
+                        else if (idade >= 60) faixasEtarias["60+"]++;
+                    });
+                    reportData = faixasEtarias;
+                    break;
+                case 'mensal':
+                    reportTitle = "Relatório Mensal de Cadastros";
+                    const dataAtual = new Date();
+                    const mesAtual = dataAtual.getMonth();
+                    const anoAtual = dataAtual.getFullYear();
+                    reportData = eleitores.filter(e => {
+                        const dataCadastro = new Date(e.dataCadastro);
+                        return dataCadastro.getMonth() === mesAtual && dataCadastro.getFullYear() === anoAtual;
+                    });
+                    break;
+                case 'crescimento':
+                    reportTitle = "Relatório de Crescimento (Não Implementado)";
+                    reportData = "Esta funcionalidade exigiria dados históricos mais complexos.";
+                    break;
+                case 'status':
+                    reportTitle = "Relatório por Status (Não Implementado)";
+                    reportData = "O cadastro atual não possui campo de status (ativo/inativo).";
+                    break;
+                case 'escola':
+                    reportTitle = "Relatório por Escola (Não Implementado)";
+                    reportData = "Esta funcionalidade exigiria dados de escola de votação no cadastro.";
+                    break;
+                case 'sexo':
+                    reportTitle = "Relatório por Sexo";
+                    const sexoStats = {
+                        "masculino": 0,
+                        "feminino": 0,
+                        "outro": 0,
+                        "naoInformado": 0
+                    };
+                    eleitores.forEach(e => {
+                        if (e.sexo === "masculino") sexoStats.masculino++;
+                        else if (e.sexo === "feminino") sexoStats.feminino++;
+                        else if (e.sexo === "outro") sexoStats.outro++;
+                        else sexoStats.naoInformado++;
+                    });
+                    reportData = sexoStats;
+                    break;
+                case 'personalizado':
+                    reportTitle = "Relatório Personalizado (Não Implementado)";
+                    reportData = "Esta funcionalidade exigiria uma interface para seleção de filtros.";
+                    break;
+                default:
+                    reportTitle = "Tipo de Relatório Desconhecido";
+                    reportData = "Nenhum relatório gerado.";
+            }
+
+            let reportOutput = `--- ${reportTitle} ---\n\n`;
+            if (Array.isArray(reportData)) {
+                if (reportData.length > 0) {
+                    reportData.forEach((item, index) => {
+                        reportOutput += `Eleitor ${index + 1}:\n`;
+                        for (const key in item) {
+                            reportOutput += `  ${key}: ${item[key]}\n`;
+                        }
+                        reportOutput += `\n`;
+                    });
+                } else {
+                    reportOutput += "Nenhum dado encontrado para este relatório.";
+                }
+            } else if (typeof reportData === 'object') {
+                for (const key in reportData) {
+                    reportOutput += `${key}: ${reportData[key]}\n`;
+                }
+            } else {
+                reportOutput += reportData;
+            }
+
+            alert(reportOutput);
+        }
+
+        // Adiciona event listeners para os botões de gerar relatório
+        document.querySelectorAll('.btn-generate').forEach(button => {
+            button.addEventListener('click', function() {
+                const reportType = this.dataset.reportType;
+                generateReport(reportType);
+            });
+        });
+
+        // --- Funções do Dashboard com Chart.js ---
+
+        async function updateDashboardCharts() { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+
+            // --- Gráfico de barras Headcount por Mês ---
+            const ctxHeadcount = document.getElementById('headcountChart').getContext('2d');
+            if (headcountChartInstance) headcountChartInstance.destroy();
+
+            const headcountByMonth = Array(12).fill(0); // Array para 12 meses
+            eleitores.forEach(eleitor => {
+                const dataCadastro = new Date(eleitor.dataCadastro);
+                const month = dataCadastro.getMonth(); // 0-11
+                headcountByMonth[month]++;
+            });
+
+            headcountChartInstance = new Chart(ctxHeadcount, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Cadastros',
+                        data: headcountByMonth,
+                        backgroundColor: '#1f78b4',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(...headcountByMonth) + (Math.max(...headcountByMonth) * 0.2) || 10, // Garante um mínimo de 10 se não houver dados
+                            ticks: { stepSize: Math.ceil(Math.max(...headcountByMonth) / 5) || 1 }
+                        }
+                    }
+                }
+            });
+
+            // --- Gráfico de linha Taxa de Cadastros no Ano ---
+            const ctxPromotion = document.getElementById('promotionRateChart').getContext('2d');
+            if (promotionRateChartInstance) promotionRateChartInstance.destroy();
+
+            const totalCadastros = eleitores.length;
+            const promotionRateData = headcountByMonth.map(count => totalCadastros > 0 ? (count / totalCadastros) * 100 : 0);
+
+            promotionRateChartInstance = new Chart(ctxPromotion, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'],
+                    datasets: [{
+                        label: 'Taxa de Cadastros',
+                        data: promotionRateData,
+                        fill: false,
+                        borderColor: '#a6d854',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        pointRadius: 4,
+                        segment: {
+                            borderColor: ctx => {
+                                const value = ctx.p0.parsed.y;
+                                if (value < 10) return '#fdae61';
+                                else if (value < 20) return '#a6d854';
+                                else return '#66c2a5';
+                            }
+                        }
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: true }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: Math.max(...promotionRateData) + (Math.max(...promotionRateData) * 0.2) || 100, // Garante um mínimo de 100%
+                            ticks: { stepSize: Math.ceil(Math.max(...promotionRateData) / 5) || 10, callback: function(value) { return value + '%'; } }
+                        }
+                    }
+                }
+            });
+
+            // --- Gráfico de rosca Tempo de Cadastro no Sistema ---
+            const ctxTempoCasa = document.getElementById('tempoCasaChart').getContext('2d');
+            if (tempoCasaChartInstance) tempoCasaChartInstance.destroy();
+
+            const tempoCasaStats = {
+                'Até 2 anos': 0,
+                '2 a 5 anos': 0,
+                '5 a 10 anos': 0,
+                '10 a 15 anos': 0,
+                '15 a 20 anos': 0,
+                'Acima de 20 anos': 0
+            };
+
+            eleitores.forEach(eleitor => {
+                const dataCadastro = new Date(eleitor.dataCadastro);
+                const hoje = new Date();
+                const diffTime = Math.abs(hoje - dataCadastro);
+                const diffYears = diffTime / (1000 * 60 * 60 * 24 * 365.25);
+
+                if (diffYears <= 2) {
+                    tempoCasaStats['Até 2 anos']++;
+                } else if (diffYears > 2 && diffYears <= 5) {
+                    tempoCasaStats['2 a 5 anos']++;
+                } else if (diffYears > 5 && diffYears <= 10) {
+                    tempoCasaStats['5 a 10 anos']++;
+                } else if (diffYears > 10 && diffYears <= 15) {
+                    tempoCasaStats['10 a 15 anos']++;
+                } else if (diffYears > 15 && diffYears <= 20) {
+                    tempoCasaStats['15 a 20 anos']++;
+                } else {
+                    tempoCasaStats['Acima de 20 anos']++;
+                }
+            });
+
+            const tempoCasaLabels = Object.keys(tempoCasaStats);
+            const tempoCasaDataValues = Object.values(tempoCasaStats);
+
+            tempoCasaChartInstance = new Chart(ctxTempoCasa, {
+                type: 'doughnut',
+                data: {
+                    labels: tempoCasaLabels,
+                    datasets: [{
+                        data: tempoCasaDataValues,
+                        backgroundColor: [
+                            '#0099ff', '#ffa500', '#6dc066', '#d6f200', '#0ea197', '#3f086e'
+                        ],
+                        borderWidth: 1,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    plugins: {
+                        legend: { position: 'right' }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // --- Gráfico de barras horizontal duplo Idade por Gênero ---
+            const ctxAgeGender = document.getElementById('ageGenderChart').getContext('2d');
+            if (ageGenderChartInstance) ageGenderChartInstance.destroy();
+
+            const ageGenderStats = {
+                'até 20': { masculino: 0, feminino: 0 },
+                '21 a 30': { masculino: 0, feminino: 0 },
+                '31 a 40': { masculino: 0, feminino: 0 },
+                '41 a 50': { masculino: 0, feminino: 0 },
+                '51 a 60': { masculino: 0, feminino: 0 },
+                '> 60': { masculino: 0, feminino: 0 }
+            };
+
+            eleitores.forEach(eleitor => {
+                const dataNascimento = new Date(eleitor.dataNascimento);
+                const idade = new Date().getFullYear() - dataNascimento.getFullYear();
+                const sexo = eleitor.sexo;
+
+                let faixaEtaria = '';
+                if (idade <= 20) faixaEtaria = 'até 20';
+                else if (idade >= 21 && idade <= 30) faixaEtaria = '21 a 30';
+                else if (idade >= 31 && idade <= 40) faixaEtaria = '31 a 40';
+                else if (idade >= 41 && idade <= 50) faixaEtaria = '41 a 50';
+                else if (idade >= 51 && idade <= 60) faixaEtaria = '51 a 60';
+                else if (idade > 60) faixaEtaria = '> 60';
+
+                if (faixaEtaria && ageGenderStats[faixaEtaria]) {
+                    if (sexo === 'masculino') {
+                        ageGenderStats[faixaEtaria].masculino++;
+                    } else if (sexo === 'feminino') {
+                        ageGenderStats[faixaEtaria].feminino++;
+                    }
+                }
+            });
+
+            const ageLabels = Object.keys(ageGenderStats);
+            const maleData = ageLabels.map(label => ageGenderStats[label].masculino);
+            const femaleData = ageLabels.map(label => -ageGenderStats[label].feminino);
+
+            const maxAbsValue = Math.max(...maleData.map(Math.abs), ...femaleData.map(Math.abs));
+
+            ageGenderChartInstance = new Chart(ctxAgeGender, {
+                type: 'bar',
+                data: {
+                    labels: ageLabels,
+                    datasets: [
+                        {
+                            label: 'Homens',
+                            data: maleData,
+                            backgroundColor: '#00abf0',
+                            borderRadius: 4,
+                            stack: 'Stack 0',
+                            indexAxis: 'y'
+                        },
+                        {
+                            label: 'Mulheres',
+                            data: femaleData,
+                            backgroundColor: '#f44336',
+                            borderRadius: 4,
+                            stack: 'Stack 0',
+                            indexAxis: 'y'
+                        }
+                    ]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => {
+                                    let value = context.raw;
+                                    value = Math.abs(value);
+                                    return `${context.dataset.label}: ${value}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            min: -maxAbsValue - (maxAbsValue * 0.2) || -10, // Garante um mínimo
+                            max: maxAbsValue + (maxAbsValue * 0.2) || 10, // Garante um máximo
+                            ticks: {
+                                callback(value) {
+                                    return Math.abs(value);
+                                },
+                                stepSize: Math.ceil(maxAbsValue / 5) || 1
+                            },
+                            stacked: true,
+                            grid: {
+                                drawTicks: false,
+                                drawBorder: false
+                            }
+                        },
+                        y: { stacked: true }
+                    }
+                }
+            });
+        }
+
+        // --- Funções de Listagem, Edição e Exclusão de Pessoal ---
+
+        // Renderiza a lista de pessoal na tabela
+        async function renderizarListaPessoal() { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+            const tableBody = document.getElementById('personalListTableBody');
+            tableBody.innerHTML = ''; // Limpa a tabela antes de preencher
+
+            if (eleitores.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">Nenhum eleitor cadastrado ainda.</td></tr>';
+                return;
+            }
+
+            eleitores.forEach((eleitor, index) => {
+                const row = tableBody.insertRow();
+
+                // Coluna Nome Completo (clicável)
+                const nomeCell = row.insertCell();
+                const nomeSpan = document.createElement('span');
+                nomeSpan.classList.add('clickable-name');
+                nomeSpan.textContent = eleitor.nomeCompleto;
+                nomeSpan.dataset.index = index; // Armazena o índice para fácil acesso aos detalhes
+                nomeCell.appendChild(nomeSpan);
+
+                // Evento de clique para exibir detalhes
+                nomeSpan.addEventListener('click', function() {
+                    exibirDetalhesEleitor(this.dataset.index);
+                });
+
+                // Outras colunas
+                row.insertCell().textContent = eleitor.cpf || 'N/A';
+                row.insertCell().textContent = eleitor.dataNascimento ? new Date(eleitor.dataNascimento).toLocaleDateString('pt-BR') : 'N/A';
+                row.insertCell().textContent = eleitor.telefone || 'N/A';
+                row.insertCell().textContent = eleitor.email || 'N/A';
+
+                // Coluna de Ações
+                const actionsCell = row.insertCell();
+                actionsCell.classList.add('action-buttons');
+
+                const editButton = document.createElement('button');
+                editButton.classList.add('edit-button');
+                editButton.textContent = 'Editar';
+                editButton.dataset.index = index;
+                editButton.addEventListener('click', function() {
+                    preencherFormularioEdicao(parseInt(this.dataset.index));
+                });
+                actionsCell.appendChild(editButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.classList.add('delete-button');
+                deleteButton.textContent = 'Excluir';
+                deleteButton.dataset.index = index;
+                deleteButton.addEventListener('click', function() {
+                    excluirEleitor(parseInt(this.dataset.index));
+                });
+                actionsCell.appendChild(deleteButton);
+            });
+        }
+
+        // Exibe detalhes completos de um eleitor
+        async function exibirDetalhesEleitor(index) { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+            const eleitor = eleitores[index];
+
+            if (!eleitor) {
+                alert('Eleitor não encontrado.');
+                return;
+            }
+
+            let detalhes = `Detalhes do Eleitor: ${eleitor.nomeCompleto}\n\n`;
+            for (const key in eleitor) {
+                let value = eleitor[key];
+                // Formata a data de nascimento e data de cadastro para exibição
+                if (key === 'dataNascimento' && value) {
+                    value = new Date(value).toLocaleDateString('pt-BR');
+                } else if (key === 'dataCadastro' && value) {
+                    value = new Date(value).toLocaleDateString('pt-BR');
+                }
+                detalhes += `${formatarChave(key)}: ${value || 'N/A'}\n`;
+            }
+            alert(detalhes);
+        }
+
+        // Exclui um eleitor do sistema
+        async function excluirEleitor(index) { // Adicionado 'async'
+            if (confirm('Tem certeza que deseja excluir este eleitor?')) {
+                let eleitores = await carregarEleitores(); // Aguarda o carregamento
+                eleitores.splice(index, 1); // Remove o eleitor do array
+                await salvarEleitores(eleitores); // Aguarda o salvamento
+                renderizarListaPessoal(); // Atualiza a tabela
+                updateReportStats(); // Atualiza as estatísticas
+                alert('Eleitor excluído com sucesso!');
+            }
+        }
+
+        // Preenche o formulário de edição com os dados do eleitor selecionado
+        async function preencherFormularioEdicao(index) { // Adicionado 'async'
+            const eleitores = await carregarEleitores(); // Aguarda o carregamento
+            const eleitor = eleitores[index];
+
+            if (!eleitor) {
+                alert('Eleitor não encontrado para edição.');
+                return;
+            }
+
+            editingEleitorIndex = index; // Armazena o índice do eleitor que está sendo editado
+
+            // Preencher os campos do formulário de edição
+            document.getElementById('editNomeCompleto').value = eleitor.nomeCompleto || '';
+            document.getElementById('editCpf').value = eleitor.cpf || '';
+            document.getElementById('editDataNascimento').value = eleitor.dataNascimento || '';
+            document.getElementById('editSexo').value = eleitor.sexo || '';
+            document.getElementById('editEstadoCivil').value = eleitor.estadoCivil || '';
+            document.getElementById('editEscolaridade').value = eleitor.escolaridade || '';
+            document.getElementById('editTelefone').value = eleitor.telefone || '';
+            document.getElementById('editEmail').value = eleitor.email || '';
+            document.getElementById('editCep').value = eleitor.cep || '';
+            document.getElementById('editEndereco').value = eleitor.endereco || '';
+            document.getElementById('editEscolaVotacao').value = eleitor.escolaVotacao || '';
+            document.getElementById('editNumero').value = eleitor.numero || '';
+            document.getElementById('editComplemento').value = eleitor.complemento || '';
+            document.getElementById('editBairro').value = eleitor.bairro || '';
+            document.getElementById('editUf').value = eleitor.uf || '';
+
+            // Exibir o formulário de edição e ocultar a lista
+            document.getElementById('lista-content').style.display = 'none';
+            document.getElementById('edit-personal-form-container').style.display = 'block';
+        }
+
+        // Salva as alterações feitas no formulário de edição
+        const editForm = document.getElementById('editEleitorForm');
+        editForm.addEventListener('submit', async function(event) { // Adicionado 'async'
+            event.preventDefault();
+
+            if (!editForm.checkValidity()) {
+                alert("Por favor, preencha todos os campos obrigatórios corretamente no formulário de edição.");
+                return;
+            }
+
+            if (editingEleitorIndex === -1) {
+                alert('Nenhum eleitor selecionado para edição.');
+                return;
+            }
+
+            const data = new FormData(editForm);
+            let eleitorAtualizado = {};
+            for (let [key, value] of data.entries()) {
+                eleitorAtualizado[key] = value;
+            }
+
+            let eleitores = await carregarEleitores(); // Aguarda o carregamento
+            // Mantém a data de cadastro original
+            eleitorAtualizado.dataCadastro = eleitores[editingEleitorIndex].dataCadastro;
+            eleitores[editingEleitorIndex] = eleitorAtualizado; // Atualiza o eleitor no array
+            await salvarEleitores(eleitores); // Aguarda o salvamento
+
+            alert('Informações do eleitor atualizadas com sucesso!');
+
+            // Ocultar o formulário de edição e voltar para a lista
+            document.getElementById('edit-personal-form-container').style.display = 'none';
+            document.getElementById('lista-content').style.display = 'block';
+            renderizarListaPessoal(); // Atualiza a tabela com as informações editadas
+            updateReportStats(); // Atualiza as estatísticas
+            editingEleitorIndex = -1; // Reseta o índice de edição
+        });
+
+        // Cancela a operação de edição
+        document.getElementById('cancelEditButton').addEventListener('click', function() {
+            if (confirm('Deseja cancelar a edição? As alterações não salvas serão perdidas.')) {
+                document.getElementById('edit-personal-form-container').style.display = 'none';
+                document.getElementById('lista-content').style.display = 'block';
+                editingEleitorIndex = -1; // Reseta o índice de edição
+                editForm.reset(); // Limpa o formulário de edição
+            }
+        });
+
+        // Função auxiliar para formatar as chaves para exibição (ex: "nomeCompleto" para "Nome Completo")
+        function formatarChave(key) {
+            const replacements = {
+                nomeCompleto: "Nome Completo",
+                cpf: "CPF",
+                dataNascimento: "Data de Nascimento",
+                sexo: "Sexo",
+                estadoCivil: "Estado Civil",
+                escolaridade: "Escolaridade",
+                telefone: "Telefone",
+                email: "E-mail",
+                cep: "CEP",
+                endereco: "Endereço",
+                escolaVotacao: "Escola de Votação",
+                numero: "Número",
+                complemento: "Complemento",
+                bairro: "Bairro",
+                uf: "UF",
+                dataCadastro: "Data de Cadastro"
+            };
+            return replacements[key] || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+        }
+
+
+        // --- Inicialização da Aplicação ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Firebase Auth State Listener
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    console.log('Usuário logado:', user.email);
+                    authContainer.style.display = 'none';
+                    appContainer.style.display = 'flex'; // Mostra o conteúdo principal
+
+                    // Define o conteúdo inicial como o de cadastro após o login
+                    document.getElementById('cadastro-content').style.display = 'block';
+                    document.querySelector('.nav-link[data-target="cadastro-content"]').classList.add('active');
+                    await updateReportStats(); // Atualiza as estatísticas com os dados do usuário
+                } else {
+                    currentUser = null;
+                    console.log('Nenhum usuário logado.');
+                    authContainer.style.display = 'flex'; // Mostra a tela de login
+                    appContainer.style.display = 'none'; // Oculta o conteúdo principal
+                    // Limpa os dados locais se o usuário deslogar
+                    localStorage.removeItem('eleitoresCadastrados');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
